@@ -80,7 +80,7 @@ class Request(object):
 
 
     def __getattr__(self, method_name):
-        return Request(self._api, {'service':self._method_name.capitalize(),'method': method_name})
+        return Request(self._api, {'service':self._method_name,'method': method_name})
 
 
     def __call__(self, object_id=None, data={}):
