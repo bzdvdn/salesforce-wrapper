@@ -23,7 +23,7 @@ class SalesForceSession(object):
     }
 
     def __init__(self, crm_url, access_token, refresh_token, client_id='', client_secret=''):
-        self.api_url = f"{crm_url}/services/data/v39.0/sobjects/"
+        self.api_url = f"{crm_url}/services/data/v39.0/"
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.client_id = client_id
@@ -46,7 +46,8 @@ class SalesForceSession(object):
 
 
     def send_api_request(self, request):
-        url = f"{self.api_url}{request._method_name['service']}/{request._object_id}/" if request._object_id else f"{self.api_url}{request._method_name['service']}"
+        api_obejct_url = f"{self.api_url}sobjects/" if request._method_name['service'] != "query" else self.api_url
+        url = f"{api_obejct_url}{request._method_name['service']}/{request._object_id}" if request._object_id else f"{api_obejct_url}{request._method_name['service']}"
         method = request._method_name['method']
         params = request._method_args
         if (method == 'update' or method == 'get') and not request._object_id:
@@ -81,6 +82,9 @@ class Request(object):
 
     def __getattr__(self, method_name):
         return Request(self._api, {'service':self._method_name,'method': method_name})
+
+    def q(self, params):
+        return Request(self._api, {'service':self._method_name,'method': "get"})(f"?q={params}")
 
 
     def __call__(self, object_id=None, data={}):
