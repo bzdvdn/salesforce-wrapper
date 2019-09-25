@@ -7,7 +7,6 @@ class SalesForceException(Exception):
         self.error_code = exception_data[0]['errorCode']
         self.message = exception_data[0]['message']
         super().__init__(args, kwargs)
-    
 
     def __str__(self):
         return f"Error code: {self.error_code}, message: {self.message}"
@@ -30,7 +29,6 @@ class SalesForceSession(object):
         self.client_secret = client_secret
         self.session = requests.Session()
 
-
     def _send_api_request(self, url, http_method, data=None):
         headers = {"Authorization": f"Bearer {self.access_token}"}
         self.session.headers.update(**headers)
@@ -44,10 +42,12 @@ class SalesForceSession(object):
             exc_data = [{"errorCode": "ConnectionError_or_JsonDecodeerror", "message": str(e)}]
             raise SalesForceException(exc_data)
 
-
     def send_api_request(self, request):
-        api_obejct_url = f"{self.api_url}sobjects/" if request._method_name['service'] != "query" else self.api_url
-        url = f"{api_obejct_url}{request._method_name['service']}/{request._object_id}" if request._object_id else f"{api_obejct_url}{request._method_name['service']}"
+        api_object_url = f"{self.api_url}sobjects/" if request._method_name['service'] != "query" else self.api_url
+        if request._object_id:
+            url = f"{api_object_url}{request._method_name['service']}/{request._object_id}"
+        else:
+            url = f"{api_object_url}{request._method_name['service']}"
         method = request._method_name['method']
         params = request._method_args
         if (method == 'update' or method == 'get') and not request._object_id:
@@ -58,15 +58,12 @@ class SalesForceSession(object):
         return self._send_api_request(url, http_method, params)
 
 
-
 class SalesForceAPI(object):
     def __init__(self, crm_url, access_token, refresh_token, client_id="", client_secret=""):
         self._session = SalesForceSession(crm_url, access_token, refresh_token, client_id="", client_secret="")
 
-
     def __getattr__(self, method_name):
         return Request(self, method_name)
-
 
     def __call__(self, method_name, method_kwargs={}):
         return getattr(self, method_name)(method_kwargs)
@@ -79,13 +76,11 @@ class Request(object):
         self._api = api
         self._method_name = method_name
 
-
     def __getattr__(self, method_name):
-        return Request(self._api, {'service':self._method_name,'method': method_name})
+        return Request(self._api, {'service': self._method_name, 'method': method_name})
 
     def q(self, params):
-        return Request(self._api, {'service':self._method_name,'method': "get"})(f"?q={params}")
-
+        return Request(self._api, {'service': self._method_name, 'method': "get"})(f"?q={params}")
 
     def __call__(self, object_id=None, data={}):
         if not isinstance(data, dict):
