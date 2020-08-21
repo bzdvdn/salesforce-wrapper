@@ -16,7 +16,7 @@ Or
 
 ```python
 from salesforce import  SalesForceAPI as API
-api = API("<your salesforce instance_url>", "<access_token>", "<refresh_token>") # init retail api
+api = API("<your salesforce instance_url>", "<access_token>", "<refresh_token>") # init salaesforce api
 
 users = api.user.list() # return list of users
 user = api.user.get("<id>")
@@ -27,7 +27,7 @@ new_user = api.user.create(data=data) # creating user
 ```
 
 # TODO
-* full documentation(all retail methods)
+* full documentation(all salesforce methods)
 * examples
 * async version
 * tests
