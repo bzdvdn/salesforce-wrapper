@@ -1,4 +1,5 @@
 import requests
+from urllib.parse import urlencode
 from json import JSONDecodeError
 
 
@@ -21,7 +22,9 @@ class SalesForceSession(object):
         "update": "patch",
     }
 
-    def __init__(self, crm_url, access_token, refresh_token, client_id='', client_secret=''):
+    def __init__(
+        self, crm_url, access_token, refresh_token, client_id='', client_secret=''
+    ):
         self.api_url = f"{crm_url}/services/data/v39.0/"
         self.access_token = access_token
         self.refresh_token = refresh_token
@@ -39,11 +42,17 @@ class SalesForceSession(object):
                 raise SalesForceException(response.json())
             return response.json()
         except (requests.ConnectionError, JSONDecodeError) as e:
-            exc_data = [{"errorCode": "ConnectionError_or_JsonDecodeerror", "message": str(e)}]
+            exc_data = [
+                {"errorCode": "ConnectionError_or_JsonDecodeerror", "message": str(e)}
+            ]
             raise SalesForceException(exc_data)
 
     def send_api_request(self, request):
-        api_object_url = f"{self.api_url}sobjects/" if request._method_name['service'] != "query" else self.api_url
+        api_object_url = (
+            f"{self.api_url}sobjects/"
+            if request._method_name['service'] != "query"
+            else self.api_url
+        )
         if request._object_id:
             url = f"{api_object_url}{request._method_name['service']}/{request._object_id}"
         else:
@@ -59,10 +68,32 @@ class SalesForceSession(object):
 
 
 class SalesForceAPI(object):
-    def __init__(self, crm_url, access_token, refresh_token, client_id="", client_secret=""):
-        self._session = SalesForceSession(crm_url, access_token, refresh_token, client_id="", client_secret="")
+    def __init__(
+        self, crm_url, access_token, refresh_token, client_id="", client_secret=""
+    ):
+        self._session = SalesForceSession(
+            crm_url,
+            access_token,
+            refresh_token,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
+    def update_tokens(self):
+        url = "https://login.salesforce.com/services/oauth2/token"
+        data = {
+            'grant_type': 'refresh_token',
+            'client_id': self._session.client_id,
+            'client_secret': self._session.client_secret,
+            'refresh_token': self._session.refresh_token,
+            'format': 'json',
+        }
+        r = requests.post(f'{url}?{urlencode(data)}').json()
+        self.access_token = r['access_token']
 
     def __getattr__(self, method_name):
+        if method_name == 'update_tokens':
+            return self.update_tokens()
         return Request(self, method_name)
 
     def __call__(self, method_name, method_kwargs={}):
@@ -80,7 +111,9 @@ class Request(object):
         return Request(self._api, {'service': self._method_name, 'method': method_name})
 
     def q(self, params):
-        return Request(self._api, {'service': self._method_name, 'method': "get"})(f"?q={params}")
+        return Request(self._api, {'service': self._method_name, 'method': "get"})(
+            f"?q={params}"
+        )
 
     def __call__(self, object_id=None, data={}):
         if not isinstance(data, dict):
