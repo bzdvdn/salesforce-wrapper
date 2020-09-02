@@ -2,11 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='salesforce-wrapper',
-    version='0.0.3',
+    version='0.0.6',
     packages=find_packages(),
-    install_requires = [
-        'requests>=2.18.2'
-    ],
+    install_requires=['requests>=2.18.2'],
     description='SalesForce wrapper',
     author='bzdvdn',
     author_email='bzdv.dn@gmail.com',
